@@ -9,31 +9,17 @@
 #include <string.h>
 #include "parser.h"
 
-// symbol table
-Symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
-
-// registers 
-Code code[MAX_CODE_SIZE];
-int token_index = 0;
-int cx = 0;
-int sp = 1;
-int symbol_index = 0;
-int lexographical_level = 1;
-int level = 0;
-int reg_ptr = 0;
-
-
-// list of symbols input from scanner
-char lexemes[MAX_CODE_SIZE][TOKEN_MAX];
-char tokens[MAX_CODE_SIZE][TOKEN_MAX];
-int len = 0;
-char *token;
-
-
+// parse the file input into a list of lexemes and symbols
 void parse(FILE *input)
 {
 	char buffer[TOKEN_MAX];
 	int i;
+
+	if (input == NULL)
+	{
+		printf("Error in opening the input file. \n");
+		exit(1);
+	}
 
 	// moves to the first part of the lexeme list
 	while (fscanf(input, "%s ", buffer) != EOF)
@@ -41,27 +27,29 @@ void parse(FILE *input)
 		if (strcmp(buffer, "List:") == 0)
 			break;
 	}
+
 	// save into lexeme list
 	for (i = 0; fscanf(input, "%s ", buffer) != EOF; i++)
 	{
 		if (strcmp(buffer, "Lexeme") == 0)
 			break;
+
 		strcpy(lexemes[i], buffer);
 		len++;
 	}
+
 	// moves to the second part of the lexeme list
 	while (fscanf(input, "%s ", buffer) != EOF)
 	{
 		if (strcmp(buffer, "List:") == 0)
 			break;
 	}
+
 	// save into token list
 	for (i = 0; fscanf(input, "%s ", buffer) != EOF; i++)
 	{
 		strcpy(tokens[i], buffer);
 	}
-	// close the input
-	fclose(input);
 
 	// initialize the code array
 	for (int i = 0; i < MAX_CODE_SIZE; i++)
@@ -72,139 +60,134 @@ void parse(FILE *input)
 		code[i].m = 0;
 	}
 
+	// print the lexemes and symbols into a txt file
+	print_lexemes();
+
 	// PROGRAM PROCEDURE
 	program();
-	//print_lexemes();
-
 }
 
+// prints statement "no errors" if code is correct
 void program()
 {
 	getNextToken();
 
+	// BLOCK PROCEDURE
 	block();
 
 	if (atoi(token) != periodsym)
 		error(9);
 
-	emit(9, level, 3);
+	emit(SIO, level, 3);
 
-	printf("No errors, program is syntactically correct.\n");
+	printf("No errors, program is syntactically correct.\n\n");
 
-	// prints the generated assembly code to file
+	//prints the generated assembly code to file for virtual machine
 	print_parser_output();
-
-	return;
 }
 
+// comprises of variable, constant, and procedure declaration
 void block()
 {
-	int jump = cx, val;
-	int space = 0;
-	int procedure_index;
+	int jump = cx, val, proc_idx, idx, space = 0;
 	char variable[12];
 
-	emit(7, level, 0);
+	emit(JMP, level, 0);
 
 	// const decleration
-
 	if (atoi(token) == constsym)
 	{
 		while (1)
 		{
-			// ident
 			getNextToken();
+
 			if (atoi(token) != identsym)
 				error(4);
-			// variable
+
 			getNextToken();
-			// check to see if the identifier is gramatically correct
 			check_identifier(token);
-			// save variable
 			strcpy(variable, token);
-			// eqlsym
 			getNextToken();
+
 			if (atoi(token) == becomessym)
 				error(1);	// use = instead
+
 			if (atoi(token) != eqlsym)
 				error(3);	// must be followed by =
-							// number literal
+
 			getNextToken();
+
 			if (atoi(token) != numbersym)
 				error(2);	// must be followed by a number
-							// integer value
+
 			getNextToken();
-			// save integer
-			val = atoi(token); // might need &
-							   // add to symbol table now
-							   //add_symbol_table(variable, 1, val, 0);
+			val = atoi(token);
+
+			if (val > 99999)
+				error(25);	// number is too large
+
 			add_to_symbol_table(1, variable, val, -1, -1);
+
 			getNextToken();
 			space++;
-			// comma
+
 			if (atoi(token) != commasym)
 				break;
 		}
-		// semicolon
+
 		if (atoi(token) != semicolonsym)
 			error(5);
+
 		getNextToken();
 	}
+
 	// variable decleration
 	if (atoi(token) == varsym)
 	{
 		while (1)
 		{
-			// ident
 			getNextToken();
+
 			if (atoi(token) != identsym)
 				error(4);
-			// variable name
+
 			getNextToken();
-			// check to see if the identifier is gramatically correct
 			check_identifier(token);
-			// save variable name
 			strcpy(variable, token);
-			// save to symbolt able
-			//add_symbol_table(variable, 2, 0, sp);
 			add_to_symbol_table(2, variable, 0, level, sp);
-			//symbol_table[symbol_index - 1].level = level;		// redundant?
 			space++;
 			sp++;
 			getNextToken();
 
-			// comma
 			if (atoi(token) != commasym)
 				break;
 		}
-		// semicolon
+
 		if (atoi(token) != semicolonsym)
 			error(7);	// semicolon expected
+
 		getNextToken();
 	}
-	// procedure
+
+	// procedure symbol
 	if (atoi(token) == procsym)
 	{
 		while (atoi(token) == procsym)
 		{
-
 			getNextToken();
-			// ident
+
 			if (atoi(token) != identsym)
-				error(4);
-			// identifier for procedure
+				error(4);	// identifier expected
+
 			getNextToken();
-			// save variable
+			check_identifier(token);
 			strcpy(variable, token);
-			// add to symbol table
-			add_symbol_table(variable, 3, 0, 0);
-			procedure_index = symbol_index - 1;
-			symbol_table[procedure_index].level = level;
-			symbol_table[procedure_index].addr = jump + 1;
-
-
+			add_to_symbol_table(3, variable, -1, val, sp);
+			proc_idx = symbol_index - 1;
+			symbol_table[proc_idx].level = level;
+			symbol_table[proc_idx].addr = jump + 1;
 			getNextToken();
-			// semicolon
+
 			if (atoi(token) != semicolonsym)
 				error(17);
 
@@ -212,61 +195,50 @@ void block()
 			space++;
 			level++;
 
-			// recursive call 
+			// recursive call to block
 			block();
-			// At this point, the token should be a ";" right when the proc ends
+
 			if (atoi(token) != semicolonsym)
 				error(10);
+
 			getNextToken();
 		}
+
 		level--;
 	}
 
 	code[jump].m = cx;
-	emit(6, level, space);
+	emit(INC, level, space);
 	statement();
-
 }
 
+// further parses the grammar by specified symbols while checking for errors
 void statement()
 {
-	int used = 0;
-	int identifier_index;
+	int used = 0, kind, idx;
 
-	// indent
+	// indent symnbol
 	if (atoi(token) == identsym)
 	{
-		// variable name
 		getNextToken();
-		// check for already used variable names
-		for (int i = symbol_index - 1; i >= 0; i--)
-		{
-			if (!strcmp(token, symbol_table[i].name))
-			{
-				if (symbol_table[i].kind == 1)
-					error(12);
-				else if (symbol_table[i].kind == 2)
-				{
-					used = 1;
-					identifier_index = i;
-				}
-			}
-		}
-		if (!used)
-			error(11); // undeclared identifier
+
+		idx = search_symbol_table();
+		kind = symbol_table[idx].kind;
+
+		if (kind == 1 || kind == 3)
+			error(12);	// assignment to procedure or constant is not allowed
 
 		getNextToken();
 
 		if (atoi(token) != becomessym)
 			error(13); // assignment operatior expected
+
 		getNextToken();
 		expression();
-
-		// emit
-		emit(4, level, symbol_table[identifier_index].addr - 1);
-
+		emit(STO, level, symbol_table[idx].addr - 1);
 	}
-	// call
+
+	// call symbol
 	else if (atoi(token) == callsym)
 	{
 		int used = 0;
@@ -277,32 +249,21 @@ void statement()
 			error(14);	// call must be followed by an identifier
 
 		getNextToken();
-		// check for already used variable names
-		for (int i = symbol_index - 1; i >= 0; i--)
-		{
-			if (!strcmp(token, symbol_table[i].name))
-			{
-				if (symbol_table[i].kind == 1 || symbol_table[i].kind == 2)
-					error(15); // call of a constant or variable is meaningless
-				identifier_index = i;
-				used = 1;
-			}
-		}
-		if (!used)
-			error(11);
+		idx = search_symbol_table();
+		kind = symbol_table[idx].kind;
 
-		if (symbol_table[identifier_index].kind == 3)
-		{
-			emit(5, level, symbol_table[identifier_index].addr);
-			//lexographical_level++;
-			//level++;
-		}
+		if (kind == 1 || kind == 2)
+			eoor(15);	//call of constant or variable is meaningless
+
+		if (symbol_table[idx].kind == 3)
+			emit(CAL, level, symbol_table[idx].addr);
 		else
 			error(14); // expected procedure after call
 
 		getNextToken();
 	}
-	// begin
+
+	// begin symbol
 	else if (atoi(token) == beginsym)
 	{
 		getNextToken();
@@ -312,73 +273,65 @@ void statement()
 		{
 			getNextToken();
 			statement();
-
 		}
 		if (atoi(token) != endsym)
 			error(27);	// end expected  
 
 		getNextToken();
 	}
-	// if
+
+	// if symbol
 	else if (atoi(token) == ifsym)
 	{
 		getNextToken();
 		condition();
+
 		if (atoi(token) != thensym)
 			error(16); // then expected
+
 		getNextToken();
-
-		// begin code gen
 		int ctemp = cx;
-		emit(8, level, 0);
-
+		emit(JPC, level, 0);
 		statement();
 		code[ctemp].m = cx;
 	}
-	// whilesym
+	// while symbol
 	else if (atoi(token) == whilesym)
 	{
 		int cx1 = cx;
 		getNextToken();
 		condition();
 		int cx2 = cx;
-		// gen goes here
-		emit(8, level, 0);
+		emit(JPC, level, 0);
+
 		if (atoi(token) != dosym)
 			error(18);	// do expected
+
 		getNextToken();
 		statement();
-		emit(7, level, cx1);
+		emit(JMP, level, cx1);
 		code[cx2].m = cx;
-
 	}
-	// read ident
+
+	// read idententifier 
 	else if (atoi(token) == readsym)
 	{
 		getNextToken();
+
 		if (atoi(token) != identsym)
-			error(29);
+			error(28);
+
 		getNextToken();
-		// check for already used variable names
-		for (int i = symbol_index - 1; i >= 0; i--)
-		{
-			if (!strcmp(token, symbol_table[i].name))
-			{
-				identifier_index = i;
-				used = 1;
-			}
-		}
-		if (!used)
-			error(11);
+		idx = search_symbol_table();
+		kind = symbol_table[idx].kind;
 
-		// take in user input
-		emit(9, level, 2);
+		// Store user input
+		emit(SIO, level, 2);
 
-		if (symbol_table[identifier_index].kind == 2)
-			emit(4, level, symbol_table[identifier_index].addr - 1);
-
-		else if (symbol_table[identifier_index].kind == 1)
-			error(12); // cannot change constants
+		if (kind == 2)
+			emit(STO, level, symbol_table[idx].addr - 1);
+		else if (kind == 1 || kind == 3)
+			error(12); // assignment to procedure or constant not allowed
 
 		getNextToken();
 	}
@@ -389,40 +342,31 @@ void statement()
 		getNextToken();
 
 		if (atoi(token) != identsym)
-			error(29);
-		getNextToken();
-		// check if variable exists in symbol table
-		for (int i = symbol_index - 1; i >= 0; i--)
-		{
-			if (!strcmp(token, symbol_table[i].name))
-			{
-				if (symbol_table[i].kind == 1 || symbol_table[i].kind == 2)
-				{
-					identifier_index = i;
-					used = 1;
-				}
-			}
-		}
-		if (!used)
-			error(11);
+			error(28);
 
-		// retrieve var
-		if (symbol_table[identifier_index].kind == 2)
+		getNextToken();
+		idx = search_symbol_table();
+		kind = symbol_table[idx].kind;
+
+		if (kind == 3)
+			error(21);	// cannot begin with a procedure identifier
+
+		if (kind == 2)
 		{
-			emit(3, level - symbol_table[identifier_index].level, symbol_table[identifier_index].addr - 1);
-			emit(9, level, 1);
+			emit(LOD, level - symbol_table[idx].level, symbol_table[idx].addr - 1);
+			emit(SIO, level, 1);
 		}
-		// retrieve variable
-		else if (symbol_table[identifier_index].kind == 1)
+		else if (kind == 1)
 		{
-			emit(1, level, symbol_table[identifier_index].val);
-			emit(9, level, 1);
+			emit(LIT, level, symbol_table[idx].val);
+			emit(SIO, level, 1);
 		}
 
 		getNextToken();
 	}
 }
 
+// checks whether the symbol is an odd symbol, then checks for relational operators
 void condition()
 {
 	// odd
@@ -430,23 +374,24 @@ void condition()
 	{
 		getNextToken();
 		expression();
-		emit(2, level, 6);
+		emit(OPR, level, 6);
 	}
 	else
 	{
 		expression();
 		// tests if the token is a relation operator
 		int op = relational_op(token);
+
 		if (op == 0)
-			error(20);
+			error(20);	// relational operator expected
+
 		getNextToken();
 		expression();
-
-		emit(2, level, op);
-		reg_ptr--;
+		emit(OPR, level, op);
 	}
 }
 
+// mathematical expressions done here
 void expression()
 {
 	char op[3];
@@ -458,7 +403,7 @@ void expression()
 		term();
 
 		if (strcmp(op, "5") == 0)
-			emit(2, level, 0); // changed 12 to 2, maybe change L to 0
+			emit(OPR, level, 0); // changed 12 to 2, maybe change L to 0
 	}
 	else
 		term();
@@ -466,23 +411,17 @@ void expression()
 	while (atoi(token) == plussym || atoi(token) == minussym)
 	{
 		strcpy(op, token);
-		// indicates number
 		getNextToken();
 		term();
 
 		if (strcmp(op, "4") == 0)
-		{
-			emit(2, level, 2); // OPR ADD
-
-		}
+			emit(OPR, level, 2); // OPR ADD
 		else
-		{
-			emit(2, level, 3);
-
-		}
+			emit(OPR, level, 3); // OPR Sub
 	}
 }
 
+// further mathematical function at one priority above
 void term()
 {
 	char op[3];
@@ -496,78 +435,89 @@ void term()
 		factor();
 
 		if (strcmp(op, "6") == 0)
-		{
-			emit(2, level, 4); // OPR mul
-
-		}
+			emit(OPR, level, 4); // OPR mul
 		else
-		{
-			emit(2, level, 5); // OPR div
-
-		}
+			emit(OPR, level, 5); // OPR div
 	}
 }
 
+// parses and detects numeric variable representation
 void factor()
 {
-	int used = 0, identifier_index = 0;
+	int idx = 0, kind;
 
 	if (atoi(token) == identsym)
 	{
 		getNextToken();
-		// check for already used variable names
-		for (int i = symbol_index - 1; i >= 0; i--)
-		{
-			if (!strcmp(token, symbol_table[i].name))
-			{
-				// error if identifier is a procedure identifier
-				if (symbol_table[i].kind == 3)
-					error(21);
 
-				identifier_index = i;
-				used = 1;
-			}
-		}
-		if (!used)
-			error(11); // undeclared identifier
+		idx = search_symbol_table();
+		kind = symbol_table[idx].kind;
 
-		if (symbol_table[identifier_index].kind == 2)
-			emit(3, level, symbol_table[identifier_index].addr - 1);
+		if (kind == 3)
+			error(21);	// expression must not contain a procedure identifier
 
-		else if (symbol_table[identifier_index].kind == 1)
-			emit(1, level, symbol_table[identifier_index].val);
+		if (kind == 2)
+			emit(LOD, level, symbol_table[idx].addr - 1);
 
+		else if (kind == 1)
+			emit(LIT, level, symbol_table[idx].val);
 
-		// Variable
 		getNextToken();
-		// Save variable
-		//token = tokens[index++];
 	}
 	// NUMERAL
 	else if (atoi(token) == numbersym)
 	{
 		getNextToken();
-		emit(1, level, atoi(token));
+		emit(LIT, level, atoi(token));
 
-
-		// numeral assigned i.e. x = 56
 		getNextToken();
-		// variable assigned now. Move to next token
-		//token = tokens[index++];
 	}
 	else if (atoi(token) == lparentsym)
 	{
 		getNextToken();
 		expression();
+
 		if (atoi(token) != rparentsym)
 			error(22);	// right parenthesis missing
+
 		getNextToken();
 	}
 	else
-		error(7);
+		error(24);	// an expression cannot begin with this symbol
+
 	return;
 }
 
+// checks the if identifier has the correct format (starts with a lttter and contains only letters and digits)
+void check_identifier(char *token)
+{
+	int i = 0, length = strlen(token);
+
+	if (token == NULL)
+		return;
+
+	if (token[i] < 65 || token[i] > 122)
+		error(26);
+
+	i++;
+
+	while (i < length)
+	{
+		if (token[i] >= 65 || token[i] <= 122 || token[i] >= 30 || token[i] <= 39)
+			;
+		else
+			error(26);
+		i++;
+	}
+
+	for (i = 0; i < 14; i++)
+	{
+		if (strcmp(token, reserved[i]) == 0)
+			error(31);  // reserved word not allowed
+	}
+}
+
+// returns the value for the operation to be done in the OPR function
 int relational_op(char *token)
 {
 	if (strcmp(token, "9") == 0) // eql
@@ -586,10 +536,11 @@ int relational_op(char *token)
 		return 0;
 }
 
+// pushes the instruction onto the code stack
 void emit(int op, int l, int m)
 {
 	if (cx > MAX_CODE_SIZE)
-		error(25);	// 
+		error(30);	// Exceeded the maximum code length
 
 	else
 	{
@@ -600,42 +551,102 @@ void emit(int op, int l, int m)
 	}
 }
 
-void add_symbol_table(char* name, int kind, int val, int address)
-{
-	symbol_table[symbol_index].kind = kind;
-	symbol_table[symbol_index].val = val;
-	symbol_table[symbol_index].addr = address;
-	strcpy(symbol_table[symbol_index].name, name);
-
-	symbol_index++;
-}
-
+// adds a variable, constant, or procedure to the table, checks for repeats
 void add_to_symbol_table(int kind, char *name, int val, int level, int addr)
 {
+	int used = 0, idx;
+
+	// check for already declared identifiers
+	for (int i = symbol_index - 1; i >= 0; i--)
+	{
+		if (!strcmp(name, symbol_table[i].name))
+		{
+			used = 1;
+			idx = i;
+		}
+	}
+	if (used)
+		error(29); // identifier already in use
+
 	if (kind == 1)
 	{
 		symbol_table[symbol_index].kind = kind;
 		strcpy(symbol_table[symbol_index].name, name);
 		symbol_table[symbol_index].val = val;
-
-		// not used
 		symbol_table[symbol_index].level = -1;
 		symbol_table[symbol_index].addr = -1;
 	}
-	else if (kind == 2)
+	else if (kind == 2 || kind == 3)
 	{
 		symbol_table[symbol_index].kind = kind;
 		strcpy(symbol_table[symbol_index].name, name);
+		symbol_table[symbol_index].val = -1;
 		symbol_table[symbol_index].level = level;
 		symbol_table[symbol_index].addr = addr;
-
-		// not used
-		symbol_table[symbol_index].val = val;
 	}
 
 	symbol_index++;
 }
 
+// returns the index of the variable or constant being searched
+int search_symbol_table()
+{
+	int idx = 0, used = 0;
+
+	// check for variable names
+	for (int i = symbol_index - 1; i >= 0; i--)
+	{
+		if (!strcmp(token, symbol_table[i].name))
+		{
+			used = 1;
+			idx = i;
+		}
+	}
+	if (!used)
+		error(11); // Undeclared identifier
+
+	return idx;
+}
+
+// prints the list of lexemes to a file output
+void print_lexemes()
+{
+	FILE *output = fopen("lexemeoutput.txt", "w");
+
+	fprintf(output, "Symbolic Lexeme List:\n");
+	for (int i = 0; i < len; i++)
+		fprintf(output, "%s ", lexemes[i]);
+	fprintf(output, "\n\n");
+
+	fprintf(output, "Lexeme List:\n");
+	for (int i = 0; i < len; i++)
+		fprintf(output, "%s ", tokens[i]);
+	fprintf(output, "\n\n");
+
+	fclose(output);
+}
+
+// prints vminput to be used by the VM() function
+void print_parser_output()
+{
+	FILE *output = fopen("vminput.txt", "w");
+
+	for (int i = 0; i < cx; i++)
+		fprintf(output, "%d %d %d\n", code[i].op, code[i].l, code[i].m);
+
+	fclose(output);
+}
+
+// gets the next token from the global token list
+void getNextToken()
+{
+	if (tokens[token_index] == NULL)
+		error(0);
+
+	token = tokens[token_index++];
+}
+
+// a list of errors 
 void error(int i)
 {
 	switch (i)
@@ -691,76 +702,19 @@ void error(int i)
 	case 25:
 		printf("This number is too large.\n"); break;
 	case 26:
-		printf("Incorrect format for identifier.\n");
+		printf("Incorrect format for identifier.\n"); break;
 	case 27:
-		printf("End expected.\n");
+		printf("End expected.\n"); break;
+	case 28:
+		printf("Identifier expected. \n"); break;
+	case 29:
+		printf("identifier already in use. \n"); break;
+	case 30:
+		printf("Exceeded the maximum code size. \n"); break;
+	case 31:
+		printf("Reserved word not allowed. \n"); break;
 	case 0:
 		printf("ERROR\n"); break;
 	}
 	exit(1);
-}
-
-void check_identifier(char *token)
-{
-	int i = 0;
-	int length = strlen(token);
-
-	if (token == NULL)
-		return;
-
-	if (token[i] < 65 || token[i] > 122)
-		error(26);
-	i++;
-
-	while (i < length)
-	{
-		if (token[i] >= 65 || token[i] <= 122 || token[i] >= 30 || token[i] <= 39)
-			;
-		else
-			error(26);
-		i++;
-	}
-}
-
-void print_lexemes()
-{
-	printf("Symbolic Lexeme List:\n");
-	for (int i = 0; i < len; i++)
-		printf("%s ", lexemes[i]);
-	printf("\n\n");
-
-	printf("Lexeme List:\n");
-	for (int i = 0; i < len; i++)
-		printf("%s ", tokens[i]);
-	printf("\n\n");
-}
-
-void print_assembly_code()
-{
-	for (int i = 0; i < cx; i++)
-	{
-		printf("%d %d %d\n", code[i].op, code[i].l, code[i].m);
-	}
-	printf("\n\n");
-}
-
-void print_parser_output()
-{
-	FILE *output = fopen("vminput.txt", "w");
-
-	for (int i = 0; i < cx; i++)
-	{
-		fprintf(output, "%d %d %d\n", code[i].op, code[i].l, code[i].m);
-	}
-	printf("\n\n");
-
-	fclose(output);
-}
-
-void getNextToken()
-{
-	if (tokens[token_index] == NULL)
-		error(0);
-
-	token = tokens[token_index++];
 }

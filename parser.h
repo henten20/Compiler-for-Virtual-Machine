@@ -1,12 +1,10 @@
 #ifndef parser
 #define parser
 
-
 // Parser 
-#define MAX_SYMBOL_TABLE_SIZE 10000
+#define MAX_SYMBOL_TABLE_SIZE 100
 #define MAX_CODE_SIZE 500
 #define TOKEN_MAX 256  
-
 
 typedef struct Symbol
 {
@@ -47,9 +45,9 @@ typedef enum
 
 } opr;
 
-
 //Internal representation mapping, from integer to string.
-char IRMapping[34][64] = {
+char IRMapping[34][64] = 
+{
 	"ZERO",
 	"nulsym",
 	"identsym",
@@ -107,13 +105,25 @@ char reserved[14][32] = {
 	"odd"
 };
 
+// symbol table
+Symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
+
+// registers 
+Code code[MAX_CODE_SIZE];
+int token_index = 0;
+int cx = 0;
+int sp = 1;
+int symbol_index = 0;
+int lexographical_level = 1;
+int level = 0;
+int len = 0;
+
+// list of symbols input from scanner
+char lexemes[MAX_CODE_SIZE][TOKEN_MAX];
+char tokens[MAX_CODE_SIZE][TOKEN_MAX];
+char *token;
+
 // function prototypes
-void emit(int, int, int);
-int relational_op(char *);
-void error(int);
-void check_identifier(char *);
-
-
 void program();
 void block();
 void statement();
@@ -121,10 +131,14 @@ void condition();
 void expression();
 void term();
 void factor();
-void emit(int, int, int);
-void print_parser_output();
-void add_symbol_table(char*, int, int, int);
-void add_to_symbol_table(int, char*, int, int, int);
 void getNextToken();
+void check_identifier(char *);
+int relational_op(char *);
+void emit(int, int, int);
+void add_to_symbol_table(int, char*, int, int, int);
+int search_symbol_table();
+void print_parser_output();
+void error(int);
+void print_lexemes();
 
 #endif

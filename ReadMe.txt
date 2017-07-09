@@ -79,6 +79,7 @@ Additional files needed:
 /////////////////////////////////////////////////////////////////////////////
 Other notes:
 
-
+An "output.txt" file will be automatically produced for every instance of the program. This output file will
+contain the contents for the lexems and symbols, the assembly code, and the virtual machine stack trace.
 
 /////////////////////////////////////////////////////////////////////////////

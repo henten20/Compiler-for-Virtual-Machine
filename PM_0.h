@@ -6,7 +6,6 @@
 #define MAX_CODE_LENGTH 500 
 #define MAX_AR_SIZE 500
 
-
 //	Variable parameters for the instruction register architecture
 typedef struct Instruction
 {

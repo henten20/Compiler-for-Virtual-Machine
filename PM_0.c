@@ -40,7 +40,6 @@ void VM()
 	fclose(output);
 }
 
-
 // ===============================================================================================
 //	This function takes in an instruction register and returns a set of string literals to be
 //	used for print statements
@@ -103,9 +102,7 @@ void instruction_execute(Instruction *IR, FILE *output)
 	for (int i = 0; i < MAX_STACK_HEIGHT; i++)
 		reg->stack[i] = 0;
 
-	printf("\t\t\t\t\tpc\tbp\tsp\tstack\n");
 	fprintf(output, "\t\t\t\t\tpc\tbp\tsp\tstack\n");
-	printf("Initial values\t\t\t\t%d\t%d\t%d\t\n", reg->pc, reg->bp, reg->sp);
 	fprintf(output, "Initial values\t\t\t\t%d\t%d\t%d\t\n", reg->pc, reg->bp, reg->sp);
 
 	// Executing the instructions here. Go into op function if value is 01
@@ -208,17 +205,17 @@ void instruction_execute(Instruction *IR, FILE *output)
 		case 9:
 			if (IR[reg->pc].m == 1)
 			{
-				printf("\n%d\n", reg->stack[--reg->sp]);
-				fprintf(output, "\n%d\n", reg->stack[reg->sp]);
+				printf("%d\n", reg->stack[--reg->sp]);
+				fprintf(output, "\n");
 				reg->stack[reg->sp] = 0;
 				reg->pc++;
 				continue;
 			}
 			else if (IR[reg->pc].m == 2)
 			{
-				printf("\n"); fprintf(output, "\n");
-				scanf("\n%d", &reg->stack[reg->sp++]);
+				scanf("%d", &reg->stack[reg->sp++]);
 				reg->pc++;
+				fprintf(output, "\n");
 				continue;
 			}
 			else if (IR[reg->pc].m == 3)
@@ -231,8 +228,8 @@ void instruction_execute(Instruction *IR, FILE *output)
 		print_stack(reg, output);
 
 	}
-	printf("\n");
 	fprintf(output, "\n");
+
 	free(reg);
 }
 
@@ -371,15 +368,13 @@ int base(Instruction *IR, Register * reg, int temp_bp)
 //
 void print_instruction(Instruction *p, FILE *output)
 {
-	printf("Line\tOP\tL\tM\n");
+
 	fprintf(output, "Line\tOP\tL\tM\n");
 
 	for (int i = 0; i < p->inst_length; i++)
 	{
-		printf("%d\t%s\t%d\t%d\n", i, p[i].op_str, p[i].l, p[i].m);
 		fprintf(output, "%d\t%s\t%d\t%d\n", i, p[i].op_str, p[i].l, p[i].m);
 	}
-	printf("\n");
 	fprintf(output, "\n");
 }
 
@@ -388,7 +383,6 @@ void print_instruction(Instruction *p, FILE *output)
 //
 void print_initial_values(FILE *output, Instruction *IR, int pc)
 {
-	printf("%d\t%s\t%d\t%d\t", pc, IR[pc].op_str, IR[pc].l, IR[pc].m);
 	fprintf(output, "%d\t%s\t%d\t%d\t", pc, IR[pc].op_str, IR[pc].l, IR[pc].m);
 }
 
@@ -399,7 +393,6 @@ void print_stack(Register *reg, FILE *output)
 {
 	int end = reg->sp, index = 1;
 
-	printf("\t%d\t%d\t%d\t", reg->pc, reg->bp, reg->sp);
 	fprintf(output, "\t%d\t%d\t%d\t", reg->pc, reg->bp, reg->sp);
 
 	// checks if instruction was a call, print an extra 4 indices
@@ -417,19 +410,15 @@ void print_stack(Register *reg, FILE *output)
 
 	for (int i = 0; i < end; i++)
 	{
-		printf("%d ", reg->stack[i]);
 		fprintf(output, "%d ", reg->stack[i]);
 
 		if (i == reg->AR[index] - 2)
 		{
-			printf("| ");
 			fprintf(output, "| ");
 			index++;
 		}
 	}
-	printf("\n");
 	fprintf(output, "\n");
-
 
 	reg->inc = 0;
 }

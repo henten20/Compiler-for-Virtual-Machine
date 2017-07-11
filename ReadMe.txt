@@ -11,10 +11,10 @@ compiler.c
     This is the main project c rile that contains the main() function. It will be responsible
 	for executing programs depending on input from the command line. The format for compiling:
 
-		gcc compiler.c parser.c PM_0.c
+		gcc compiler.c lexicalAnalyzer.c parser.c virtualMachine.c
 
-	NOTE: An ouput file from the lexicalAnalyzer.c program is needed in order to run the compiler
-	program. The output must be in the format:
+	NOTE: An ouput file from the lexicalAnalyzer.c program will be produced to be used by the
+	parser portion of the program. The output will be in the format:
 
 		Symbolic Lexeme List:
 			lexeme lexeme ... lexeme
@@ -25,20 +25,27 @@ compiler.c
 	This format is the default text file produced from the lexicalAnalyzer provided from Webcourses.
 	To execute the compiler.c program, input the following into the command line:
 
-		./a.out filename.txt -l -a -v
+		./a.out  -l -a -v
 
-	where the filename is the name of the file produced from the lexicalAnalyzer.c program.
-	At minimum, the command line arguments must have at least "./a.out filename.txt". 
+	where the the file input will be read in automatically as "in.txt". Please make sure in.txt is 
+	included in the directory and has some sort of code typed in.
+
+	At minimum, the command line arguments must have at least "./a.out
 	-l, -a, -v are additional commands that will output the list of lexemes, assembly code,
 	and virtual machine output.
 
 	Some examples of acceptable command line input:
 
-		- ./a.out filename.txt 
-		- ./a.out filename.txt -l 
+		- ./a.out 
+		- ./a.out  -l 
 		- ./a.out filename.txt -a -v
 		- ./a.out filename.txt -l -a 
 		- ./a.out filename.txt -l -v
+
+lexicalAnalyzer.c
+	This is a modified version of the provided lexical analyzer. This reads in "in.txt" from the directory and will parse
+	the code out into a list of symbolic lexems and a list of symbol tokens. A file named "out.txt" will be produced
+	and used by parser.c
 
 parser.c
     This parser.c file will take in the filename.txt file and parse out the intermediate symbols in order
@@ -51,7 +58,7 @@ parser.c
 	Once the parsing is completed. A list of generated assembly code will be produced and written to a file called
 	"vminput.txt". 
 
-PM_0.c
+virtualMachine.c
     This is virtual machine program created for homework 1. This program will take the "vminput.txt" file created from
 	the parser.c program and execute the assembly code. Selecting "-v" as a command argument will display the 
 	operation input and stack contents similar to that of homework 1. A corresponding text file will also be produced.
@@ -72,14 +79,15 @@ PM_0.h
 /////////////////////////////////////////////////////////////////////////////
 Additional files needed:
 
-- lexicalAnalyzer.c
 - in.txt
-- out.txt
 
 /////////////////////////////////////////////////////////////////////////////
 Other notes:
 
 An "output.txt" file will be automatically produced for every instance of the program. This output file will
 contain the contents for the lexems and symbols, the assembly code, and the virtual machine stack trace.
+
+All intermediate files such as "vminput.txt", "vmoutput.txt", "lexicaloutput.txt", etc will not be kept and are
+deleted at the end of the program.
 
 /////////////////////////////////////////////////////////////////////////////

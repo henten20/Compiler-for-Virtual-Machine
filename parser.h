@@ -45,65 +45,6 @@ typedef enum
 
 } opr;
 
-//Internal representation mapping, from integer to string.
-char IRMapping[34][64] = 
-{
-	"ZERO",
-	"nulsym",
-	"identsym",
-	"numbersym",
-	"plussym",
-	"minussym",
-	"multsym",
-	"slashsym",
-	"oddsym",
-	"eqlsym",
-	"neqsym",
-	"lessym",
-	"leqsym",
-	"gtrsym",
-	"geqsym",
-	"lparentsym",
-	"rparentsym",
-	"commasym",
-	"semicolonsym",
-	"periodsym",
-	"becomesym",
-	"beginsym",
-	"endsym",
-	"ifsym",
-	"thensym",
-	"whilesym",
-	"dosym",
-	"callsym",
-	"constsym",
-	"varsym",
-	"?",
-	"writesym",
-	"readsym",
-	"?",
-
-};
-
-//List of symbols allowed
-char symbols[] = { '+', '-', '*', '/', '(', ')', '=', ',', '.', '<', '>', ';', ':' };
-
-char reserved[14][32] = {
-	"const",
-	"var",
-	"?",
-	"call",
-	"begin",
-	"end",
-	"if",
-	"then",
-	"?",
-	"while",
-	"do",
-	"read",
-	"write",
-	"odd"
-};
 
 // symbol table
 Symbol symbol_table[MAX_SYMBOL_TABLE_SIZE];
@@ -124,6 +65,7 @@ char tokens[MAX_CODE_SIZE][TOKEN_MAX];
 char *token;
 
 // function prototypes
+
 void program();
 void block();
 void statement();
@@ -139,6 +81,5 @@ void add_to_symbol_table(int, char*, int, int, int);
 int search_symbol_table();
 void print_parser_output();
 void error(int);
-void print_lexemes();
 
 #endif

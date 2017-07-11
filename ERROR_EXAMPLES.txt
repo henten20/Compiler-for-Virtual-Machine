@@ -1,0 +1,215 @@
+// =========================== LIST OF POSSIBLE ERRORS===========================
+
+		printf("Use = instead of :=.\n"); break;
+		printf("= must be followed by a number.\n"); break;
+		printf("Identifier must be followed by =.\n"); break;
+		printf("Const, var, proceduremust be followed by identifier.\n"); break;
+		printf("Semicolon or comma missing.\n"); break;
+		printf("Incorrect symbol after procedure declaration.\n"); break;
+		printf("Statement expected.\n"); break;
+		printf("Incorrect symbol after statement part in block.\n"); break;
+		printf("Period expected.\n"); break;
+		printf("Semicolon between statements missing.\n"); break;
+		printf("Undeclared identifier.\n"); break;
+		printf("Assignment to constant or procedure is not allowed.\n"); break;
+		printf("Assignment operator expected.\n"); break;
+		printf("Call must be followed by an identifier.\n"); break;
+		printf("Call of a constant or variable is meaningless.\n"); break;
+		printf("Then expected.\n"); break;
+		printf("Semicolon or end expected.\n"); break;
+		printf("Do expected.\n"); break;
+		printf("Incorrect symbol following statement.\n"); break;
+		printf("Relational operator expected.\n"); break;
+		printf("Expression must not contain a procedure identifier.\n"); break;
+		printf("Right parenthesis missing.\n"); break;
+		printf("The preceding factor cannot begin with this symbol.\n"); break;
+		printf("An expression cannot begin with this symbol.\n"); break;
+		printf("This number is too large.\n"); break;
+		printf("Incorrect format for identifier.\n"); break;
+		printf("End expected.\n"); break;
+		printf("Identifier expected. \n"); break;
+		printf("identifier already in use. \n"); break;
+		printf("Exceeded the maximum code size. \n"); break;
+
+
+// ================= EXAMPLES OF SOME OF THE ERRORS THAT MAY BE ENCOUNTERED ==========================
+
+"Period expected"
+
+var x, y, z;
+begin
+	read x;
+	read y;
+	z := x+y;
+	write z;
+end
+
+// ==========================
+
+"identifier already in use."
+
+var x, x, z;
+begin
+	read x;
+	read y;
+	z := x+y;
+	write z;
+end.
+
+// ==========================
+
+"Semicolon or end expected"
+"Semicolon or comma missing"
+
+var x, y, z
+begin
+	read x;
+	read y;
+	z := x+y;
+	write z;
+end.
+
+// ==========================
+
+"Undeclared identifier"
+
+var x, y, z;
+begin
+	read w;
+	read y;
+	z := x+y;
+	write z;
+end.
+
+// ==========================
+
+"Use = instead of :="
+
+const x := 12;
+begin
+	write x;
+end.
+
+// ==========================
+
+"Do expected"
+
+var a;    
+begin        
+  a := 1;        
+  while a <= 10            
+  begin                                  
+    write a;        
+    a := a + 1;  
+  end; 
+end.
+
+
+// ==========================
+
+"End expected"
+
+var a;    
+begin        
+  a := 1;        
+  while a <= 10 do            
+  begin                                  
+    write a;        
+    a := a + 1;  
+end.
+
+// ==========================
+
+"Const, var, procedure must be followed by identifier."
+
+var , b, answer;
+begin
+	read a;
+	read b;
+	answer := a-b;
+	write answer;
+end.
+
+// ==========================
+
+"Assignment to constant or procedure is not allowed"
+
+const x = 20;
+begin
+	x := 55;
+end.
+
+// ==========================
+
+"Assignment operator expected."
+
+var a;    
+begin        
+  a = 1;        
+  while a <= 10 do            
+  begin                                  
+    write a;        
+    a := a + 1;  
+end.
+
+// ==========================
+
+"Relational operator expected."
+
+var a;    
+begin        
+  a := 1;        
+  while a + 10 do            
+  begin                                  
+    write a;        
+    a := a + 1;  
+end.
+
+// ==========================
+
+"Then expected."
+
+var x, y;  
+begin    
+  read x;    
+  read y;   
+  if x = 2  
+    write y; 
+end.
+
+// ==========================
+
+"= must be followed by a number."
+
+const x = ;
+begin
+  write const;
+end.
+ 
+// ==========================
+
+"Right parenthesis missing.\n""
+
+const a=19, procedure=12, else=17;
+var answer;
+begin
+	answer := a*(12-11+(3*procedure /(else+2));
+	write answer;
+end.
+
+// ==========================
+
+"An expression cannot begin with this symbol"
+
+const a=19, procedure=12, else=17;
+var answer;
+begin
+	answer := a*(--12-11+(3*procedure)/(else+2));
+	write answer;
+end.
+
+// ==========================
+
+"Exceeded the maximum code size. \n"
+
+A code that is so long, you don't want to bother reading through it because it's just that long

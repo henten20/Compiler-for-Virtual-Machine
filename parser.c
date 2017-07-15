@@ -72,7 +72,7 @@ void program()
 	if (atoi(token) != periodsym)
 		error(9);
 
-	emit(SIO, level, 3);
+	emit(SIO, 0, 3);
 
 	printf("No errors, program is syntactically correct.\n\n");
 
@@ -84,12 +84,15 @@ void program()
 
 void block()
 {
-	int jump = cx, val;
-	int space = 0;
+	int val, jump;
+	int space = 4;
 	int proc_idx, idx;
 	char variable[12];
+ 
+  level++;
+  jump = cx;
 
-	emit(JMP, level, 0);
+	emit(JMP, 0, 0);
 
 	// const decleration
 	if (atoi(token) == constsym)
@@ -126,7 +129,6 @@ void block()
 			add_to_symbol_table(1, variable, val, -1, -1);
 
 			getNextToken();
-			space++;
 
 			if (atoi(token) != commasym)
 				break;
@@ -142,6 +144,7 @@ void block()
 	{
 		while (1)
 		{
+      space++;
 			getNextToken();
 
 			if (atoi(token) != identsym)
@@ -150,9 +153,8 @@ void block()
 			getNextToken();
 			check_identifier(token);
 			strcpy(variable, token);
-			add_to_symbol_table(2, variable, 0, level, sp);
-			space++;
-			sp++;
+			add_to_symbol_table(2, variable, 0, level, space);
+			
 			getNextToken();
 
 			if (atoi(token) != commasym)
@@ -174,23 +176,21 @@ void block()
 
 			if (atoi(token) != identsym)
 				error(4);	// identifier expected
-
-			getNextToken();
+      
+			getNextToken(); 
 			check_identifier(token);
 			strcpy(variable, token);
-			add_to_symbol_table(3, variable, -1, val, sp);
-			proc_idx = symbol_index - 1;
-			symbol_table[proc_idx].level = level;
-			symbol_table[proc_idx].addr = jump + 1;
+   	  add_to_symbol_table(3, variable, -1, level, cx + 1);
+		//	proc_idx = symbol_index - 1;
+		//	symbol_table[proc_idx].level = level;
+		//	symbol_table[proc_idx].addr = jump + 1;
 			getNextToken();
 
 			if (atoi(token) != semicolonsym)
 				error(17);
-
+      
 			getNextToken();
-			space++;
-			level++;
-
+      
 			// recursive call to block
 			block();
 
@@ -199,12 +199,18 @@ void block()
 
 			getNextToken();
 		}
-		level--;
 	}
 
 	code[jump].m = cx;
-	emit(INC, level, space);
+	emit(INC, 0, space);
 	statement();
+ 
+  if (level != 0)
+    emit(OPR, 0, 0);
+  
+  // delete all symbols after exiting the level
+  delete_symbols();
+  level--;
 }
 
 void statement()
@@ -231,14 +237,12 @@ void statement()
 
 		getNextToken();
 		expression();
-		emit(STO, level, symbol_table[idx].addr - 1);
+		emit(STO, level - symbol_table[idx].level, symbol_table[idx].addr - 1);
 	}
 
 	// call
 	else if (atoi(token) == callsym)
 	{
-		int used = 0;
-
 		getNextToken();
 
 		if (atoi(token) != identsym)
@@ -246,24 +250,12 @@ void statement()
 
 		getNextToken();
 
-		// check for variable names
-		for (int i = symbol_index - 1; i >= 0; i--)
-		{
-			if (!strcmp(token, symbol_table[i].name))
-			{
-				if (symbol_table[i].kind == 1 || symbol_table[i].kind == 2)
-					error(15); // call of a constant or variable is meaningless
-
-				idx = i;
-				used = 1;
-			}
-		}
-		if (used)
-			error(29);	// identifier already in use
+		idx = search_symbol_table();
+    kind = symbol_table[idx].kind;
 
 		if (symbol_table[idx].kind == 3)
 		{
-			emit(CAL, level, symbol_table[idx].addr);
+			emit(CAL, level - symbol_table[idx].level, symbol_table[idx].addr);
 		}
 		else
 			error(14); // expected procedure after call
@@ -302,6 +294,12 @@ void statement()
 		emit(JPC, level, 0);
 		statement();
 		code[ctemp].m = cx;
+    
+    // Peek into the next token
+    char *temp_token = tokens[token_index];
+    
+    if (strcmp(token, "elsesym") == 0)
+      ;
 	}
 	// whilesym
 	else if (atoi(token) == whilesym)
@@ -338,7 +336,7 @@ void statement()
 		emit(SIO, level, 2);
 
 		if (kind == 2)
-			emit(STO, level, symbol_table[idx].addr - 1);
+			emit(STO, level - symbol_table[idx].level, symbol_table[idx].addr - 1);
 
 		else if (kind == 1 || kind == 3)
 			error(12); // assignment to procedure or constant not allowed
@@ -350,7 +348,10 @@ void statement()
 	else if (atoi(token) == writesym)
 	{
 		getNextToken();
-
+    expression();
+    
+    emit(SIO, level, 1);
+    /*
 		if (atoi(token) != identsym)
 			error(28);
 
@@ -370,11 +371,15 @@ void statement()
 		// retrieve variable
 		else if (kind == 1)
 		{
-			emit(LIT, level, symbol_table[idx].val);
+			emit(LIT, 0, symbol_table[idx].val);
 			emit(SIO, level, 1);
 		}
 
 		getNextToken();
+   
+   */
+   
+   
 	}
 }
 
@@ -474,10 +479,10 @@ void factor()
 			error(21);	// expression must not contain a procedure identifier
 
 		if (kind == 2)
-			emit(LOD, level, symbol_table[idx].addr - 1);
+			emit(LOD, level - symbol_table[idx].level, symbol_table[idx].addr - 1);
 
 		else if (kind == 1)
-			emit(LIT, level, symbol_table[idx].val);
+			emit(LIT, 0, symbol_table[idx].val);
 
 		getNextToken();
 	}
@@ -485,7 +490,7 @@ void factor()
 	else if (atoi(token) == numbersym)
 	{
 		getNextToken();
-		emit(LIT, level, atoi(token));
+		emit(LIT, 0, atoi(token));
 
 		// numeral assigned i.e. x = 56
 		getNextToken();
@@ -568,6 +573,9 @@ void add_to_symbol_table(int kind, char *name, int val, int level, int addr)
 	{
 		if (!strcmp(name, symbol_table[i].name))
 		{
+      // exit when we search out of the current lexigraphical level
+      if (symbol_table[i].level != level)
+        break;
 			used = 1;
 			idx = i;
 		}
@@ -701,4 +709,28 @@ void error(int i)
 		printf("ERROR\n"); break;
 	}
 	exit(1);
+}
+
+void print_symbol_table()
+{
+  for(int i = 0; i < symbol_index; i++)
+  {
+    printf("Kind\tName\tValue\tLevel\tAddr\t\n");
+    printf("%d\t%s\t%d\t%d\t%d\t\n", symbol_table[i].kind, symbol_table[i].name, symbol_table[i].val      ,symbol_table[i].level, symbol_table[i].addr);
+  }
+}
+
+void delete_symbols()
+{
+  for (int i = symbol_index - 1; i >= 0; i--)
+	{
+		if (symbol_table[i].level == level)
+		{
+      strcpy(symbol_table[i].name, "");
+      symbol_table[i].kind = -1;
+      symbol_table[i].val = -1;
+      symbol_table[i].level = -1;
+      symbol_table[i].addr = -1;
+		}
+	}
 }

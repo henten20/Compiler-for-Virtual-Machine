@@ -19,6 +19,9 @@ void output_assembly_code();
 void output_vm();
 void append_output();
 
+// extra function
+void print_symbol_table();
+
 int main(int argc, char **argv)
 {
   FILE *input = fopen("in.txt", "r");
@@ -58,6 +61,12 @@ int main(int argc, char **argv)
 		{
 			output_vm();
 		}
+   	if (strcmp(argv[arguments], "-s") == 0)
+		{
+			print_symbol_table();
+		}
+   // extra addition for printing the symbol table
+   
 
 		arguments++;
 	}
@@ -157,6 +166,6 @@ void append_output()
   fclose(output);
   
   remove("out.txt");
-  remove("vminput.txt");
+  //remove("vminput.txt");
   remove("vmoutput.txt");
 }

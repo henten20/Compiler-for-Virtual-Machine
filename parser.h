@@ -56,7 +56,7 @@ int cx = 0;
 int sp = 1;
 int symbol_index = 0;
 int lexographical_level = 1;
-int level = 0;
+int level = -1;
 int len = 0;
 
 // list of symbols input from scanner
@@ -81,5 +81,8 @@ void add_to_symbol_table(int, char*, int, int, int);
 int search_symbol_table();
 void print_parser_output();
 void error(int);
+
+void print_symbol_table();
+void delete_symbols();
 
 #endif

@@ -24,7 +24,7 @@ neqsym = 10, lessym = 11, leqsym = 12, gtrsym = 13, geqsym = 14,
 lparentsym = 15, rparentsym = 16, commasym = 17, semicolonsym = 18,
 periodsym = 19, becomesym = 20, beginsym = 21, endsym = 22, ifsym = 23,
 thensym = 24, whilesym = 25, dosym = 26, callsym = 27, constsym = 28,
-varsym = 29, writesym = 31, readsym = 32;
+varsym = 29, procsym = 30, writesym = 31, readsym = 32, elsesym = 33;
 
 //Internal representation mapping, from integer to string.
 char IRMapping[34][64] = {
@@ -58,10 +58,10 @@ char IRMapping[34][64] = {
 "callsym",
 "constsym",
 "varsym",
-"?",
+"procsym",
 "writesym",
 "readsym",
-"?",
+"elsesym",
 
 };
 
@@ -71,13 +71,13 @@ char symbols[] = {'+', '-', '*', '/', '(', ')', '=', ',', '.', '<', '>', ';', ':
 char reserved[14][32] = {
 "const",
 "var",
-"?",
+"procedure",
 "call",
 "begin",
 "end",
 "if",
 "then",
-"?",
+"else",
 "while",
 "do",
 "read",
@@ -105,6 +105,8 @@ int mapReserved(int spotInReserved)
 		return constsym;
 	if (spotInReserved == 1)
 		return varsym;
+  if (spotInReserved == 2)
+		return procsym;
 	if (spotInReserved == 3)
 		return callsym;
 	if (spotInReserved == 4)
@@ -115,6 +117,8 @@ int mapReserved(int spotInReserved)
 		return ifsym;
 	if (spotInReserved == 7)
 		return thensym;
+  if (spotInReserved == 8)
+		return elsesym;
 	if (spotInReserved == 9)
 		return whilesym;
 	if (spotInReserved == 10)
@@ -155,7 +159,6 @@ int mapSymbol(char * symbol)
 		return gtrsym;
 	if (strcmp(symbol, ";") == 0)
 		return semicolonsym;
-
 	if (strcmp(symbol, "<>") == 0)
 		return neqsym;
 	if (strcmp(symbol, "<=") == 0)
@@ -579,3 +582,4 @@ void lexi(FILE *input, FILE *output)
  fclose(input);
  fclose(output);
 }
+

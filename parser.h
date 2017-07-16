@@ -35,7 +35,7 @@ typedef enum
 	lparentsym = 15, rparentsym = 16, commasym = 17, semicolonsym = 18,
 	periodsym = 19, becomessym = 20, beginsym = 21, endsym = 22, ifsym = 23,
 	thensym = 24, whilesym = 25, dosym = 26, callsym = 27, constsym = 28,
-	varsym = 29, procsym = 30, writesym = 31, readsym = 32, elseym = 33
+	varsym = 29, procsym = 30, writesym = 31, readsym = 32, elsesym = 33
 
 } sym;
 

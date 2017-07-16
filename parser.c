@@ -293,14 +293,22 @@ void statement()
 		int ctemp = cx;
 		emit(JPC, level, 0);
 		statement();
-		code[ctemp].m = cx;
-    
-    // Peek into the next token
-    char *temp_token = tokens[token_index];
-    
-    if (strcmp(token, "elsesym") == 0)
-      ;
+		
+    if (atoi(token) == elsesym)
+    {
+      code[ctemp].m = cx + 1;
+      getNextToken();
+      int ctemp = cx;
+      emit(JMP, 0, 0);
+      statement();
+      code[ctemp].m = cx;
+    }
+    else
+    {
+      code[ctemp].m = cx;
+    }
 	}
+ 
 	// whilesym
 	else if (atoi(token) == whilesym)
 	{
@@ -349,37 +357,7 @@ void statement()
 	{
 		getNextToken();
     expression();
-    
     emit(SIO, level, 1);
-    /*
-		if (atoi(token) != identsym)
-			error(28);
-
-		getNextToken();
-
-		idx = search_symbol_table();
-		kind = symbol_table[idx].kind;
-
-		if (kind == 3)
-			error(0);
-		// retrieve var
-		if (kind == 2)
-		{
-			emit(LOD, level - symbol_table[idx].level, symbol_table[idx].addr - 1);
-			emit(SIO, level, 1);
-		}
-		// retrieve variable
-		else if (kind == 1)
-		{
-			emit(LIT, 0, symbol_table[idx].val);
-			emit(SIO, level, 1);
-		}
-
-		getNextToken();
-   
-   */
-   
-   
 	}
 }
 
@@ -483,7 +461,6 @@ void factor()
 
 		else if (kind == 1)
 			emit(LIT, 0, symbol_table[idx].val);
-
 		getNextToken();
 	}
 	// NUMERAL
@@ -491,10 +468,8 @@ void factor()
 	{
 		getNextToken();
 		emit(LIT, 0, atoi(token));
-
-		// numeral assigned i.e. x = 56
 		getNextToken();
-		// variable assigned now. Move to next token
+
 	}
 	else if (atoi(token) == lparentsym)
 	{
@@ -709,13 +684,15 @@ void error(int i)
 		printf("ERROR\n"); break;
 	}
 	exit(1);
+ 
+ //getNextToken();
 }
 
 void print_symbol_table()
 {
+  printf("\nKind\tName\tValue\tLevel\tAddr\t\n");
   for(int i = 0; i < symbol_index; i++)
   {
-    printf("Kind\tName\tValue\tLevel\tAddr\t\n");
     printf("%d\t%s\t%d\t%d\t%d\t\n", symbol_table[i].kind, symbol_table[i].name, symbol_table[i].val      ,symbol_table[i].level, symbol_table[i].addr);
   }
 }
@@ -724,13 +701,20 @@ void delete_symbols()
 {
   for (int i = symbol_index - 1; i >= 0; i--)
 	{
+    if (level == 0)
+      break;
 		if (symbol_table[i].level == level)
 		{
-      strcpy(symbol_table[i].name, "");
+     // only delete variable symbols
+      if (symbol_table[i].kind != 2)
+        break;
+      strcpy(symbol_table[i].name, "[Del]");
       symbol_table[i].kind = -1;
       symbol_table[i].val = -1;
       symbol_table[i].level = -1;
       symbol_table[i].addr = -1;
+      
+      symbol_index--;
 		}
 	}
 }

@@ -22,10 +22,10 @@ void parse(FILE *input)
 
 	// moves to the first part of the lexeme list
 	while (fscanf(input, "%s ", buffer) != EOF)
-	{
+ {
 		if (strcmp(buffer, "List:") == 0)
 			break;
-	}
+      }
 
 	// save into lexeme list
 	for (i = 0; fscanf(input, "%s ", buffer) != EOF; i++)
@@ -38,27 +38,17 @@ void parse(FILE *input)
 
 	// moves to the second part of the lexeme list
 	while (fscanf(input, "%s ", buffer) != EOF)
-	{
+ {
 		if (strcmp(buffer, "List:") == 0)
 			break;
-	}
-
+  }
+  
 	// save into token list
 	for (i = 0; fscanf(input, "%s ", buffer) != EOF; i++)
-	{
+  {
 		strcpy(tokens[i], buffer);
-	}
+  }
 
-	// initialize the code array
-	for (int i = 0; i < MAX_CODE_SIZE; i++)
-	{
-		code[i].op = 0;
-		code[i].r = 0;
-		code[i].l = 0;
-		code[i].m = 0;
-	}
-
-	// PROGRAM PROCEDURE
 	program();
 }
 
@@ -66,7 +56,6 @@ void program()
 {
 	getNextToken();
 
-	// BLOCK PROCEDURE
 	block();
 
 	if (atoi(token) != periodsym)
@@ -76,17 +65,12 @@ void program()
 
 	printf("No errors, program is syntactically correct.\n\n");
 
-	//prints the generated assembly code to file for virtual machine
 	print_parser_output();
-
-	return;
 }
 
 void block()
 {
-	int val, jump;
-	int space = 4;
-	int proc_idx, idx;
+	int val, jump, idx, space = 4;
 	char variable[12];
  
   level++;
@@ -102,10 +86,9 @@ void block()
 			getNextToken();
 
 			if (atoi(token) != identsym)
-				error(4);
+				error(4);  // identifier expected
 
 			getNextToken();
-			check_identifier(token);
 			strcpy(variable, token);
 			getNextToken();
 
@@ -151,7 +134,7 @@ void block()
 				error(4);
 
 			getNextToken();
-			check_identifier(token);
+	
 			strcpy(variable, token);
 			add_to_symbol_table(2, variable, 0, level, space);
 			
@@ -178,12 +161,9 @@ void block()
 				error(4);	// identifier expected
       
 			getNextToken(); 
-			check_identifier(token);
+		
 			strcpy(variable, token);
    	  add_to_symbol_table(3, variable, -1, level, cx + 1);
-		//	proc_idx = symbol_index - 1;
-		//	symbol_table[proc_idx].level = level;
-		//	symbol_table[proc_idx].addr = jump + 1;
 			getNextToken();
 
 			if (atoi(token) != semicolonsym)
@@ -215,8 +195,7 @@ void block()
 
 void statement()
 {
-	int used = 0, kind;
-	int idx;
+	int used = 0, kind, idx;
 
 	// indent
 	if (atoi(token) == identsym)
@@ -254,9 +233,8 @@ void statement()
     kind = symbol_table[idx].kind;
 
 		if (symbol_table[idx].kind == 3)
-		{
 			emit(CAL, level - symbol_table[idx].level, symbol_table[idx].addr);
-		}
+
 		else
 			error(14); // expected procedure after call
 
@@ -298,15 +276,14 @@ void statement()
     {
       code[ctemp].m = cx + 1;
       getNextToken();
-      int ctemp = cx;
+      int ctemp2 = cx;
       emit(JMP, 0, 0);
       statement();
-      code[ctemp].m = cx;
+      code[ctemp2].m = cx;
     }
     else
-    {
       code[ctemp].m = cx;
-    }
+
 	}
  
 	// whilesym
@@ -408,13 +385,10 @@ void expression()
 		term();
 
 		if (strcmp(op, "4") == 0)
-		{
 			emit(OPR, level, 2); // OPR ADD
-		}
+
 		else
-		{
 			emit(OPR, level, 3); // OPR Sub
-		}
 	}
 }
 
@@ -431,13 +405,10 @@ void term()
 		factor();
 
 		if (strcmp(op, "6") == 0)
-		{
 			emit(OPR, level, 4); // OPR mul
-		}
+
 		else
-		{
 			emit(OPR, level, 5); // OPR div
-		}
 	}
 }
 
@@ -461,50 +432,32 @@ void factor()
 
 		else if (kind == 1)
 			emit(LIT, 0, symbol_table[idx].val);
+      
 		getNextToken();
 	}
 	// NUMERAL
 	else if (atoi(token) == numbersym)
 	{
 		getNextToken();
+    //int val = token;
+    
 		emit(LIT, 0, atoi(token));
 		getNextToken();
-
 	}
 	else if (atoi(token) == lparentsym)
 	{
 		getNextToken();
 		expression();
+   
 		if (atoi(token) != rparentsym)
 			error(22);	// right parenthesis missing
+      
 		getNextToken();
 	}
 	else
 		error(24);	// an expression cannot begin with this symbol
 
 	return;
-}
-
-void check_identifier(char *token)
-{
-	int i = 0;
-	int length = strlen(token);
-
-	if (token == NULL)
-		return;
-
-	if (token[i] < 65 || token[i] > 122)
-		error(26);
-	i++;
-
-	while (i < length)
-	{
-		if (token[i] >= 65 || token[i] <= 122 || token[i] >= 30 || token[i] <= 39)
-			;
-		else
-			error(26);
-		i++;
-	}
 }
 
 int relational_op(char *token)
@@ -551,6 +504,7 @@ void add_to_symbol_table(int kind, char *name, int val, int level, int addr)
       // exit when we search out of the current lexigraphical level
       if (symbol_table[i].level != level)
         break;
+        
 			used = 1;
 			idx = i;
 		}
@@ -574,7 +528,7 @@ void add_to_symbol_table(int kind, char *name, int val, int level, int addr)
 		symbol_table[symbol_index].level = level;
 		symbol_table[symbol_index].addr = addr;
 	}
-
+ 
 	symbol_index++;
 }
 
@@ -600,6 +554,7 @@ int search_symbol_table()
 void print_parser_output()
 {
 	FILE *output = fopen("vminput.txt", "w");
+ 
 	for (int i = 0; i < cx; i++)
 	{
 		fprintf(output, "%d %d %d\n", code[i].op, code[i].l, code[i].m);
@@ -670,8 +625,6 @@ void error(int i)
 		printf("An expression cannot begin with this symbol.\n"); break;
 	case 25:
 		printf("This number is too large.\n"); break;
-	case 26:
-		printf("Incorrect format for identifier.\n"); break;
 	case 27:
 		printf("End expected.\n"); break;
 	case 28:
@@ -684,17 +637,14 @@ void error(int i)
 		printf("ERROR\n"); break;
 	}
 	exit(1);
- 
- //getNextToken();
 }
 
 void print_symbol_table()
 {
   printf("\nKind\tName\tValue\tLevel\tAddr\t\n");
+  
   for(int i = 0; i < symbol_index; i++)
-  {
-    printf("%d\t%s\t%d\t%d\t%d\t\n", symbol_table[i].kind, symbol_table[i].name, symbol_table[i].val      ,symbol_table[i].level, symbol_table[i].addr);
-  }
+    printf("%d\t%s\t%d\t%d\t%d\t\n", symbol_table[i].kind, symbol_table[i].name, symbol_table[i].val, symbol_table[i].level, symbol_table[i].addr);
 }
 
 void delete_symbols()
@@ -703,11 +653,13 @@ void delete_symbols()
 	{
     if (level == 0)
       break;
+      
 		if (symbol_table[i].level == level)
 		{
      // only delete variable symbols
       if (symbol_table[i].kind != 2)
         break;
+        
       strcpy(symbol_table[i].name, "[Del]");
       symbol_table[i].kind = -1;
       symbol_table[i].val = -1;
@@ -718,3 +670,13 @@ void delete_symbols()
 		}
 	}
 }
+
+// ===============================================================================
+// Notes on changes:
+//
+//  - Deleted check_identifier functionality since lexicalAnalyzer does it already
+//  - Deleted case 26
+//
+//  - Added option to print symbol table for debugging purposes
+//  - Took out the initialization of the code array
+//  - Deleted proc_idx and respaced variables, brackets
